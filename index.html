@@ -188,7 +188,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2021-12-08 16:34:10 / 修改时间：21:24:00" itemprop="dateCreated datePublished" datetime="2021-12-08T16:34:10+08:00">2021-12-08</time>
+              <time title="创建时间：2021-12-08 16:34:10 / 修改时间：21:35:10" itemprop="dateCreated datePublished" datetime="2021-12-08T16:34:10+08:00">2021-12-08</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -249,7 +249,7 @@
 <li>M:内核线程</li>
 <li>P: process处理器</li>
 </ul>
-<p><img src="/.io//GMP1.png" alt="GMP模型"></p>
+<p><img src="/.io//12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP1.png" alt="GMP模型"></p>
 <p><strong>P结构：</strong>一个P对应一个M，P结构中带有runnext字段和一个本地队列，runnext字段中存储的就是下一个被M执行的G，每个P带有一个256大小的本地数组队列，这个队列是无锁的，这两个数据结构类似于缓存的概念，可以有效的解决全局队列被频繁访问的问题，而且runnext和本地队列是PM结构本地的，没有其他的执行单元竞争，所以也不用加锁。</p>
 
       
