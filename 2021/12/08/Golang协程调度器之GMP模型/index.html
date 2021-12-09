@@ -27,13 +27,13 @@
 <meta property="og:site_name" content="老K的博客">
 <meta property="og:description" content="协程首先要区分进程，线程（内核线程），协程（用户线程）三个概念。  进程 计算机分配资源的最小单位  线程   处理器调度和分派的基本单位  协程  用户级别线程，由用户创建、销毁、调度  进程、线程、协程的区别  进程、线程、是由系统内核进行调度，按照调度算法，分配CPU时间片执行 协程（用户线程） 是完全由用户创建，调度，销毁，系统内核对其是没有感知的。协程的调度切换，远比线程切换开销小。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://songrenkun.github.io/.io//GMP1.png">
+<meta property="og:image" content="https://songrenkun.github.io/.io//12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP1.png">
 <meta property="article:published_time" content="2021-12-08T08:34:10.000Z">
-<meta property="article:modified_time" content="2021-12-09T03:07:21.119Z">
+<meta property="article:modified_time" content="2021-12-09T03:08:38.092Z">
 <meta property="article:author" content="老K">
 <meta property="article:tag" content="Go">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://songrenkun.github.io/.io//GMP1.png">
+<meta name="twitter:image" content="https://songrenkun.github.io/.io//12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP1.png">
 
 <link rel="canonical" href="https://songrenkun.github.io/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/">
 
@@ -199,7 +199,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-12-09 11:07:21" itemprop="dateModified" datetime="2021-12-09T11:07:21+08:00">2021-12-09</time>
+                <time title="修改时间：2021-12-09 11:08:38" itemprop="dateModified" datetime="2021-12-09T11:08:38+08:00">2021-12-09</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -269,7 +269,7 @@
 <li>M:内核线程</li>
 <li>P: process处理器</li>
 </ul>
-<p><img src="/.io//GMP1.png" alt="GMP模型"></p>
+<p><img src="/.io//12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP1.png" alt="GMP模型"></p>
 <p><strong>P结构：</strong>一个P对应一个M，P结构中带有runnext字段和一个本地队列，runnext字段中存储的就是下一个被M执行的G，每个P带有一个256大小的本地数组队列，这个队列是无锁的，而且runnext和本地队列是PM结构本地的，没有其他的执行单元竞争，所以也不用加锁。</p>
 
     </div>
