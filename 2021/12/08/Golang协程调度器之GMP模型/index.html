@@ -20,12 +20,12 @@
     var CONFIG = {"hostname":"songrenkun.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":{"gitalk":{"order":-2}},"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="线程首先要区分内核线程，用户线程，轻量级进程（LWP） ，协程，的概念。  内核线程 系统内核空间的线程，由内核对其进行管理 用户线程 用户空间实现，对于内核是透明的，由用户进行管理   Definition：a LWP runs in user space on top of a single kernel thread and shares its address space and syst">
+  <meta name="description" content="线程首先要区分内核线程，用户线程，轻量级进程（LWP） ，协程，的概念。  内核线程 系统内核空间的线程（linux 中也可称作核心进程），由内核对其进行管理 用户线程 用户空间实现，对于内核是透明的，由用户进行管理   Definition：a LWP runs in user space on top of a single kernel thread and shares its addre">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Golang协程调度器之GMP模型">
 <meta property="og:url" content="https://songrenkun.github.io/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/index.html">
 <meta property="og:site_name" content="老K的博客">
-<meta property="og:description" content="线程首先要区分内核线程，用户线程，轻量级进程（LWP） ，协程，的概念。  内核线程 系统内核空间的线程，由内核对其进行管理 用户线程 用户空间实现，对于内核是透明的，由用户进行管理   Definition：a LWP runs in user space on top of a single kernel thread and shares its address space and syst">
+<meta property="og:description" content="线程首先要区分内核线程，用户线程，轻量级进程（LWP） ，协程，的概念。  内核线程 系统内核空间的线程（linux 中也可称作核心进程），由内核对其进行管理 用户线程 用户空间实现，对于内核是透明的，由用户进行管理   Definition：a LWP runs in user space on top of a single kernel thread and shares its addre">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://songrenkun.github.io/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP6.png">
 <meta property="og:image" content="https://songrenkun.github.io/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP5.png">
@@ -34,7 +34,7 @@
 <meta property="og:image" content="https://songrenkun.github.io/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP2.png">
 <meta property="og:image" content="https://songrenkun.github.io/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP3.png">
 <meta property="article:published_time" content="2021-12-08T08:34:10.000Z">
-<meta property="article:modified_time" content="2021-12-13T03:26:45.225Z">
+<meta property="article:modified_time" content="2021-12-14T08:06:11.434Z">
 <meta property="article:author" content="老K">
 <meta property="article:tag" content="Go">
 <meta name="twitter:card" content="summary">
@@ -204,7 +204,7 @@
                   <i class="fa fa-calendar-check-o"></i>
                 </span>
                 <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-12-13 11:26:45" itemprop="dateModified" datetime="2021-12-13T11:26:45+08:00">2021-12-13</time>
+                <time title="修改时间：2021-12-14 16:06:11" itemprop="dateModified" datetime="2021-12-14T16:06:11+08:00">2021-12-14</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -229,14 +229,14 @@
                 <i class="fa fa-file-word-o"></i>
               </span>
                 <span class="post-meta-item-text">本文字数：</span>
-              <span>7.1k</span>
+              <span>7.3k</span>
             </span>
             <span class="post-meta-item" title="阅读时长">
               <span class="post-meta-item-icon">
                 <i class="fa fa-clock-o"></i>
               </span>
                 <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>6 分钟</span>
+              <span>7 分钟</span>
             </span>
 
         </div>
@@ -250,7 +250,7 @@
       
         <h2 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h2><p>首先要区分<strong>内核线程</strong>，<strong>用户线程</strong>，<strong>轻量级进程（LWP）</strong> ，<strong>协程</strong>，的概念。</p>
 <ul>
-<li><strong>内核线程</strong> 系统内核空间的线程，由内核对其进行管理</li>
+<li><strong>内核线程</strong> 系统内核空间的线程（linux 中也可称作核心进程），由内核对其进行管理</li>
 <li><strong>用户线程</strong> 用户空间实现，对于内核是透明的，由用户进行管理</li>
 </ul>
 <blockquote>
@@ -261,16 +261,20 @@
 </blockquote>
 <span id="more"></span>
 <ul>
-<li><p><strong>轻量级进程</strong> 轻量级进程(LWP)是建立在内核之上并由内核支持的用户线程，它是内核线程的高度抽象，每一个轻量级进程都与一个特定的内核线程关联。</p>
+<li><p><strong>轻量级进程</strong> 在Linux 系统内，是没有线程的概念的，我们把那些与其他进程共享资源的进程称之为轻量级进程。轻量级进程由clone()系统调用创建，参数是CLONE_VM，即与父进程是共享进程地址空间和系统资源。与普通的进程不同的是，LWP只有一个最小的执行上下文和调度程序所需的统计信息。由于LWP都会与一个内核线线程关联，那么创建LWP必然会需要内核态和用户态之间的切换。</p>
+<ol>
+<li>处理器竞争：因与特定内核线程关联，因此可以在全系统范围内竞争处理器资源</li>
+<li>使用资源：与父进程共享进程地址空间</li>
+<li>调度：像普通进程一样调度</li>
+</ol>
 </li>
 <li><p><strong>协程</strong>可以理解成是用户线程，对内核是透明的，由用户创建，调度，销毁。</p>
 </li>
 </ul>
-<h2 id="线程模型"><a href="#线程模型" class="headerlink" title="线程模型"></a>线程模型</h2><p>用户线程想要执行，不可避免的需要CPU等资源，所以需要将用户线程对应到内核线程上来进行执行。</p>
+<h2 id="线程模型"><a href="#线程模型" class="headerlink" title="线程模型"></a>线程模型</h2><p>用户线程想要执行，不可避免的需要CPU等资源，所以需要将用户线程对应到内核线程上来进行执行，LWP具有内核线程支持，是内核的调度单元，就作为用户线程和内核线程之间的桥梁。</p>
 <h3 id="一对一模型"><a href="#一对一模型" class="headerlink" title="一对一模型"></a>一对一模型</h3><p><img src="/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP6.png" alt="GMP模型"></p>
 <p>一个用户线程关联一个内核线程，由内核来管理线程。这种模型缺点很明显，创建一个用户线程，就需要一个内核线程对应，那么创建线程的开销就会很大，自然也限制了可创建线程的数量</p>
-<h3 id="多对一模型"><a href="#多对一模型" class="headerlink" title="多对一模型"></a>多对一模型</h3><p><img src="/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP5.png" alt="GMP模型"></p>
-<p>多个用户线程关联一个内核线程，用户的线程的调度可以在用户态来完成，可以避免频繁的切换内核态和用户态，提升线程效率。但是当需要进行阻塞式的系统调用时，所有的线程都会停止进行等待。</p>
+<h3 id="多对一模型"><a href="#多对一模型" class="headerlink" title="多对一模型"></a>多对一模型</h3><p><img src="/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP5.png" alt="GMP模型"><br>多个用户线程关联一个内核线程，用户的线程的调度可以在用户态来完成，可以避免频繁的切换内核态和用户态，提升线程效率。但是当需要进行阻塞式的系统调用时，所有的线程都会停止进行等待。</p>
 <h3 id="多对多模型"><a href="#多对多模型" class="headerlink" title="多对多模型"></a>多对多模型</h3><p><img src="/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/GMP4.png" alt="GMP模型"></p>
 <p>有效避免前两者的弊端，大部分时间可以在用户态来完成，当发生系统调用内核线程阻塞时，可以将用户线程与其他内核线程关联去执行。对于这种模型，就需要用户自己来实现复杂的调度器。Golang 就是采用了多对多的模型，所以go需要自己实现复杂的调度器。</p>
 <h2 id="GMP模型"><a href="#GMP模型" class="headerlink" title="GMP模型"></a>GMP模型</h2><p>go的调度器的设计采用了<strong>GMP模型</strong> </p>
