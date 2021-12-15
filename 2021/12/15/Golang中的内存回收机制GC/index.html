@@ -20,30 +20,35 @@
     var CONFIG = {"hostname":"songrenkun.github.io","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"gitalk","storage":true,"lazyload":false,"nav":{"gitalk":{"order":-2}},"activeClass":"gitalk"},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="我思故我在">
-<meta property="og:type" content="website">
-<meta property="og:title" content="老K的博客">
-<meta property="og:url" content="https://songrenkun.github.io/index.html">
+  <meta name="description" content="Golang 为何需要内存回收机制GC(Garbage Collection)垃圾回收，就是去释放进程当前已经不使用的内存。C需要开发者自己去释放，增添开发者的工作难度。为了降低开发者的开发难度，多种高级编程语言（例如java，go）都提供了自己的内存回收机制，开发者无需再关心开发过程中对象的释放问题，大大方便了开发者。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Golang中的内存回收机制GC">
+<meta property="og:url" content="https://songrenkun.github.io/2021/12/15/Golang%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6GC/index.html">
 <meta property="og:site_name" content="老K的博客">
-<meta property="og:description" content="我思故我在">
+<meta property="og:description" content="Golang 为何需要内存回收机制GC(Garbage Collection)垃圾回收，就是去释放进程当前已经不使用的内存。C需要开发者自己去释放，增添开发者的工作难度。为了降低开发者的开发难度，多种高级编程语言（例如java，go）都提供了自己的内存回收机制，开发者无需再关心开发过程中对象的释放问题，大大方便了开发者。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://songrenkun.github.io/2021/12/15/Golang%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6GC/GC1.png">
+<meta property="article:published_time" content="2021-12-15T08:16:53.000Z">
+<meta property="article:modified_time" content="2021-12-15T12:49:33.833Z">
 <meta property="article:author" content="老K">
+<meta property="article:tag" content="Go">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://songrenkun.github.io/2021/12/15/Golang%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6GC/GC1.png">
 
-<link rel="canonical" href="https://songrenkun.github.io/">
+<link rel="canonical" href="https://songrenkun.github.io/2021/12/15/Golang%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6GC/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome : true,
-    isPost : false,
+    isHome : false,
+    isPost : true,
     lang   : 'zh-CN'
   };
 </script>
 
-  <title>老K的博客</title>
+  <title>Golang中的内存回收机制GC | 老K的博客</title>
   
 
 
@@ -157,9 +162,10 @@
         <div class="content-wrap">
           
 
-          <div class="content index posts-expand">
+          <div class="content post posts-expand">
             
-      
+
+    
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
@@ -175,10 +181,9 @@
       <meta itemprop="name" content="老K的博客">
     </span>
       <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/15/Golang%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6GC/" class="post-title-link" itemprop="url">Golang中的内存回收机制GC</a>
-        </h2>
+        <h1 class="post-title" itemprop="name headline">
+          Golang中的内存回收机制GC
+        </h1>
 
         <div class="post-meta">
             <span class="post-meta-item">
@@ -200,7 +205,14 @@
                 </span>
             </span>
 
-          <br>
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span><br>
             <span class="post-meta-item" title="本文字数">
               <span class="post-meta-item-icon">
                 <i class="fa fa-file-word-o"></i>
@@ -225,236 +237,88 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="Golang-为何需要内存回收机制"><a href="#Golang-为何需要内存回收机制" class="headerlink" title="Golang 为何需要内存回收机制"></a>Golang 为何需要内存回收机制</h2><p><strong>GC</strong>(Garbage Collection)垃圾回收，就是去释放进程当前已经不使用的内存。C需要开发者自己去释放，增添开发者的工作难度。为了降低开发者的开发难度，多种高级编程语言（例如java，go）都提供了自己的内存回收机制，开发者无需再关心开发过程中对象的释放问题，大大方便了开发者。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/15/Golang%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6GC/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
+        <h2 id="Golang-为何需要内存回收机制"><a href="#Golang-为何需要内存回收机制" class="headerlink" title="Golang 为何需要内存回收机制"></a>Golang 为何需要内存回收机制</h2><p><strong>GC</strong>(Garbage Collection)垃圾回收，就是去释放进程当前已经不使用的内存。C需要开发者自己去释放，增添开发者的工作难度。为了降低开发者的开发难度，多种高级编程语言（例如java，go）都提供了自己的内存回收机制，开发者无需再关心开发过程中对象的释放问题，大大方便了开发者。</p>
+<span id="more"></span>
 
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://songrenkun.github.io/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="老K">
-      <meta itemprop="description" content="我思故我在">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="老K的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/" class="post-title-link" itemprop="url">Golang协程调度器之GMP模型</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-12-08 16:34:10" itemprop="dateCreated datePublished" datetime="2021-12-08T16:34:10+08:00">2021-12-08</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-12-14 16:06:11" itemprop="dateModified" datetime="2021-12-14T16:06:11+08:00">2021-12-14</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/golang%E5%9F%BA%E7%A1%80/" itemprop="url" rel="index"><span itemprop="name">golang基础</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>7.3k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>7 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h2><p>首先要区分<strong>内核线程</strong>，<strong>用户线程</strong>，<strong>轻量级进程（LWP）</strong> ，<strong>协程</strong>，的概念。</p>
+<h2 id="常见的GC算法"><a href="#常见的GC算法" class="headerlink" title="常见的GC算法"></a>常见的GC算法</h2><h3 id="标记清除"><a href="#标记清除" class="headerlink" title="标记清除"></a>标记清除</h3><p>标记清除分为两个阶段 标记 和 清除</p>
 <ul>
-<li><strong>内核线程</strong> 系统内核空间的线程（linux 中也可称作核心进程），由内核对其进行管理</li>
-<li><strong>用户线程</strong> 用户空间实现，对于内核是透明的，由用户进行管理</li>
+<li><p><strong>标记阶段</strong>从Roots对象开始遍历，对可达的对象进行标记，未达对象（未被标记）,就是需要被回收的对象。</p>
+</li>
+<li><p><strong>清除阶段</strong>清除未被标记的对象所占内存空间。</p>
+</li>
 </ul>
-<blockquote>
-<p>Definition：a LWP runs in user space on top of a single kernel thread and shares its address space and system resources with other LWPs within the same process</p>
-</blockquote>
-<blockquote>
-<p> 即：轻量级进程(LWP)是建立在内核之上并由内核支持的用户线程，它是内核线程的高度抽象，每一个轻量级进程都与一个特定的内核线程关联。</p>
-</blockquote>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
+<p>标记清除的<strong>缺点</strong>很明显，会有大量的内存碎片。并且在标记过程中，为了防止对象之间的引用关系变动，通常需要STW(stop the world)，这对系统响应的实时性会造成很大的影响。</p>
+<h3 id="复制法"><a href="#复制法" class="headerlink" title="复制法"></a>复制法</h3><p><strong>复制法</strong>，将内存分成两块分每次只使用一半，每次GC将还在使用的内存，复制到另一块（复制的过程可以将内存紧凑到一起），当复制完成，将当前块的内存全部回收。</p>
+<p>内存碎片问题虽然不存在了,但每次只使用一半内存，造成了内存严重浪费。</p>
+<h3 id="标记整理"><a href="#标记整理" class="headerlink" title="标记整理"></a>标记整理</h3><p><strong>标记整理</strong>，标记完成后，将存活对象压至一端，然后清除边界外的垃圾对象。虽然解决了内存碎片的问题，但是移动存活对象内存地址，成本太高。</p>
+<h2 id="Golang的GC算法"><a href="#Golang的GC算法" class="headerlink" title="Golang的GC算法"></a>Golang的GC算法</h2><p>golang 早期版本 使用了标记清除的方法，就像上叙标记清除的算法缺点一样，其中最让人诟病的就是STW的时间过长，使得系统存在实时响应上的问题。之后，golang进行优化。主要的优化方向，是缩短STW时间，能够让标记和清除的过程能够与程序运行同步进行。随后提出了三色标记法和混合写屏障作为GO的GC算法。下面来看看三色标记法的过程。</p>
+<h3 id="三色标记法"><a href="#三色标记法" class="headerlink" title="三色标记法"></a>三色标记法</h3><ol>
+<li>Step1:将所有对象标记为白色    </li>
+<li>Step2:每次GC开始时，从根对象(全局变量，每个 goroutine 的执行栈,寄存器)开始扫描，每个被引用的对象标记为灰色，放入灰色集合</li>
+<li>Step3: 遍历灰色对象集合，将灰色对象引用的白色对象标记为灰色，放入灰色集合，并把遍历过的灰色对象放入黑色对象集合</li>
+<li>Step4:重复第3步，直到灰色对象集合为空</li>
+<li>Step5: 此时剩下的白色对象被认为是不可达对象，清除白色对象</li>
+</ol>
+<h4 id="三色标记法存在的问题"><a href="#三色标记法存在的问题" class="headerlink" title="三色标记法存在的问题"></a>三色标记法存在的问题</h4><p>三色标记的过程，需要STW（停止引用关系变化），如果不依赖STW进行标记，会存在以下问题</p>
+<ul>
+<li>条件1：如果已被标记为黑色的对象，引用了某个白色对象</li>
+<li>条件2：灰色对象不再引用某个白色对象</li>
+</ul>
+<p>如果条件1和条件2 同时满足，就可能会出现黑色对象引用了白色对象，并且没有灰色对象引用该白色对象了。那么这个白色对象在三色标记的流程中就会被遗漏（无灰色对象引用它了）。但事实上，该白色对象并非孤岛对象不该被回收（仍然有对象引用它），这就造成了对象的误回收。</p>
+<p><img src="/2021/12/15/Golang%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6GC/GC1.png"></p>
+<h4 id="混合写屏障"><a href="#混合写屏障" class="headerlink" title="混合写屏障"></a>混合写屏障</h4><p>如何解决上述存在的问题了，能够不需要STW，依然可以正确的标记呢？就引入了混合写屏障的概念，无需被它复杂的名称所困扰，</p>
+
     </div>
 
     
     
     
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="https://songrenkun.github.io/2021/12/07/irist%E6%96%87%E6%A1%A3/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.jpg">
-      <meta itemprop="name" content="老K">
-      <meta itemprop="description" content="我思故我在">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="老K的博客">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/12/07/irist%E6%96%87%E6%A1%A3/" class="post-title-link" itemprop="url">irist文档</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2021-12-07 17:15:59" itemprop="dateCreated datePublished" datetime="2021-12-07T17:15:59+08:00">2021-12-07</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2021-12-08 15:26:47" itemprop="dateModified" datetime="2021-12-08T15:26:47+08:00">2021-12-08</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E7%A7%81%E4%BA%BA/" itemprop="url" rel="index"><span itemprop="name">私人</span></a>
-                </span>
-            </span>
-
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数：</span>
-              <span>6.1k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>6 分钟</span>
-            </span>
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          Here's something encrypted, password is required to continue reading.
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/2021/12/07/irist%E6%96%87%E6%A1%A3/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
         
-      
-    </div>
 
-    
-    
-    
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>老K
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://songrenkun.github.io/2021/12/15/Golang%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6GC/" title="Golang中的内存回收机制GC">https://songrenkun.github.io/2021/12/15/Golang中的内存回收机制GC/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
+          <div class="post-tags">
+              <a href="/tags/Go/" rel="tag"># Go</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/12/08/Golang%E5%8D%8F%E7%A8%8B%E8%B0%83%E5%BA%A6%E5%99%A8%E4%B9%8BGMP%E6%A8%A1%E5%9E%8B/" rel="prev" title="Golang协程调度器之GMP模型">
+      <i class="fa fa-chevron-left"></i> Golang协程调度器之GMP模型
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
       </footer>
+    
   </article>
   
   
-  
-
-
   
 
 
 
           </div>
           
+    <div class="comments" id="gitalk-container"></div>
 
 <script>
   window.addEventListener('tabs:register', () => {
@@ -501,6 +365,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Golang-%E4%B8%BA%E4%BD%95%E9%9C%80%E8%A6%81%E5%86%85%E5%AD%98%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6"><span class="nav-number">1.</span> <span class="nav-text">Golang 为何需要内存回收机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E7%9A%84GC%E7%AE%97%E6%B3%95"><span class="nav-number">2.</span> <span class="nav-text">常见的GC算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%87%E8%AE%B0%E6%B8%85%E9%99%A4"><span class="nav-number">2.1.</span> <span class="nav-text">标记清除</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A4%8D%E5%88%B6%E6%B3%95"><span class="nav-number">2.2.</span> <span class="nav-text">复制法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%87%E8%AE%B0%E6%95%B4%E7%90%86"><span class="nav-number">2.3.</span> <span class="nav-text">标记整理</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Golang%E7%9A%84GC%E7%AE%97%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">Golang的GC算法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B3%95"><span class="nav-number">3.1.</span> <span class="nav-text">三色标记法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0%E6%B3%95%E5%AD%98%E5%9C%A8%E7%9A%84%E9%97%AE%E9%A2%98"><span class="nav-number">3.1.1.</span> <span class="nav-text">三色标记法存在的问题</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%B7%B7%E5%90%88%E5%86%99%E5%B1%8F%E9%9A%9C"><span class="nav-number">3.1.2.</span> <span class="nav-text">混合写屏障</span></a></li></ol></li></ol></li></ol></div>
       </div>
       <!--/noindex-->
 
@@ -651,6 +516,25 @@
 
   
 
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.css">
+
+<script>
+NexT.utils.loadComments(document.querySelector('#gitalk-container'), () => {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/gitalk@1/dist/gitalk.min.js', () => {
+    var gitalk = new Gitalk({
+      clientID    : '6705ef39881ee9de4209',
+      clientSecret: 'a608fa267682698212dcd8ca83425b0ed61ffb92',
+      repo        : 'songrenkun.github.io',
+      owner       : 'songrenkun',
+      admin       : ['songrenkun'],
+      id          : 'ac54de7aabac7a4896ec78041aac4946',
+        language: 'zh-CN',
+      distractionFreeMode: false
+    });
+    gitalk.render('gitalk-container');
+  }, window.Gitalk);
+});
+</script>
 
 </body>
 </html>
